@@ -16,5 +16,5 @@ data Exp = Num Int | Negate Exp | Add Exp Exp
   deriving (Eq, Show)
 
 -- Optional: if not attempted, leave as undefined
--- parseString :: String -> Either ParseError Exp
--- parseString = undefined
+parseString :: String -> Either ParseError Exp
+parseString = undefined

@@ -26,7 +26,7 @@ data Exp = Num Int | Negate Exp | Add Exp Exp
   deriving (Eq, Show)
 
 parseString :: String -> Either ParseError Exp
-parseString s = case [a | (a,t) <- (readP_to_S parseE s), all isSpace t] of
+parseString s = case [a | (a,t) <- readP_to_S parseE s, all isSpace t] of
               [a] -> Right a
               [] -> Left "Parsing failed" 
               _ -> Left "How did it get here ?"
@@ -35,8 +35,7 @@ parseE :: Parser Exp
 parseE = do 
           t <- parseT; 
           parseW;
-          f <- parseF t;
-          return f
+          parseF t;
         <|>
           do 
             parseW;
@@ -44,9 +43,7 @@ parseE = do
             parseW;
             t <- parseT;
             parseW;
-            f <- parseF $ Negate t;
-            return $ f
-
+            parseF $ Negate t;
 
 parseF :: Exp -> Parser Exp
 parseF expr = 
@@ -58,7 +55,7 @@ parseF expr =
           parseW;
           f <- parseF $ Add expr t;
           parseW;
-          return $ f
+          return f
         <|>
           do 
             parseW;
@@ -66,8 +63,7 @@ parseF expr =
             parseW;
             t <- parseT;
             parseW;
-            f <- parseF $  Add expr $ Negate t;
-            return $ f
+            parseF $  Add expr $ Negate t
           <|>
             return expr
 
