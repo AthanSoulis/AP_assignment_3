@@ -1,0 +1,64 @@
+Program ::= Stmts
+
+Stmts ::= Stmt
+| Stmt ‘;’ Stmts
+
+Stmt ::= ident ‘=’ Expr
+| Expr
+
+Expr ::=  RelExpr
+| AddExpr
+| MultExpr
+|‘(’ Expr ‘)’
+| ident
+| ident ‘(’ Exprz ‘)’
+| ‘[’ Exprz ‘]’
+| ‘[’ Expr ForClause Clausez ‘]’
+| numConst
+| stringConst
+| ‘None’ | ‘True’ | ‘False’
+| ‘not’ Expr
+
+HiPrecExpr ::= ‘(’ Expr ‘)’
+| ident ‘(’ Exprz ‘)’
+| ident
+| numConst
+| stringConst
+|
+
+MultExpr ::= HiPrecExpr MultExpr'
+MultExpr' ::= MultOper MultExpr | ε
+
+AddExpr ::= MultExpr AddExpr'
+AddExpr' ::= AddOper AddExpr | ε
+
+RelExpr ::= AddExpr RelExpr'
+RelExpr' ::= RelOper HiPrecExpr | ε 
+
+MultOper ::= ‘*’ | ‘//’ | ‘%’
+AddOper ::= ‘+’ | ‘-’ 
+RelOper ::= ‘==’ | ‘!=’ | ‘<’ | ‘<=’ | ‘>’ | ‘>=’ | ‘in’ | ‘not’ ‘in’
+
+Oper ::= ‘+’ | ‘-’ | ‘*’ | ‘//’ | ‘%’
+| ‘==’ | ‘!=’ | ‘<’ | ‘<=’ | ‘>’ | ‘>=’
+| ‘in’ | ‘not’ ‘in’
+
+ForClause ::= ‘for’ ident ‘in’ Expr
+IfClause ::= ‘if’ Expr
+
+Clausez ::= ε
+| ForClause Clausez
+| IfClause Clausez
+
+Exprz ::= ε
+| Exprs
+
+Exprs ::= Expr
+| Expr ‘,’ Exprs
+
+ident ::= (see text)
+
+numConst ::= (1-9)(0-9)*
+|‘-’(0-9)(0-9)*
+
+stringConst ::= (see text)
