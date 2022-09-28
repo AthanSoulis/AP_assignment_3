@@ -1,64 +1,35 @@
 Program ::= Stmts
-
-Stmts ::= Stmt
-| Stmt ‘;’ Stmts
-
+Stmts ::= Stmt Stmts'
+Stmts' ::= ‘;’ Stmts | ε
 Stmt ::= ident ‘=’ Expr
 | Expr
 
-Expr ::=  RelExpr
-| AddExpr
-| MultExpr
-|‘(’ Expr ‘)’
-| ident
-| ident ‘(’ Exprz ‘)’
-| ‘[’ Exprz ‘]’
+Expr ::=  'not' Expr | RelExpr
+RelExpr ::= AddNegExpr RelExpr'
+RelExpr' ::= RelOper AddNegExpr | ε 
+AddNegExpr ::= MultDivExpr AddNegExpr'
+AddNegExpr' ::= AddNegOper MultDivExpr AddNegExpr' | ε
+MultDivExpr ::= ConstExpr MultDivExpr'
+MultDivExpr' ::= MultOper ConstExpr MultDivExpr' | ε
+ConstExpr ::= stringConst | numConst
+| ‘None’ | ‘True’ | ‘False’ 
+| ident | '(' Expr ')' 
+| ident '(' Exprz ')' 
 | ‘[’ Expr ForClause Clausez ‘]’
-| numConst
-| stringConst
-| ‘None’ | ‘True’ | ‘False’
-| ‘not’ Expr
+| ‘[’ Exprz ‘]’
 
-HiPrecExpr ::= ‘(’ Expr ‘)’
-| ident ‘(’ Exprz ‘)’
-| ident
-| numConst
-| stringConst
-|
-
-MultExpr ::= HiPrecExpr MultExpr'
-MultExpr' ::= MultOper MultExpr | ε
-
-AddExpr ::= MultExpr AddExpr'
-AddExpr' ::= AddOper AddExpr | ε
-
-RelExpr ::= AddExpr RelExpr'
-RelExpr' ::= RelOper HiPrecExpr | ε 
-
-MultOper ::= ‘*’ | ‘//’ | ‘%’
-AddOper ::= ‘+’ | ‘-’ 
+MultDivOper ::= ‘*’ | ‘//’ | ‘%’
+AddNegOper ::= ‘+’ | ‘-’ 
 RelOper ::= ‘==’ | ‘!=’ | ‘<’ | ‘<=’ | ‘>’ | ‘>=’ | ‘in’ | ‘not’ ‘in’
-
-Oper ::= ‘+’ | ‘-’ | ‘*’ | ‘//’ | ‘%’
-| ‘==’ | ‘!=’ | ‘<’ | ‘<=’ | ‘>’ | ‘>=’
-| ‘in’ | ‘not’ ‘in’
-
 ForClause ::= ‘for’ ident ‘in’ Expr
 IfClause ::= ‘if’ Expr
-
 Clausez ::= ε
 | ForClause Clausez
 | IfClause Clausez
-
 Exprz ::= ε
 | Exprs
-
-Exprs ::= Expr
-| Expr ‘,’ Exprs
-
+Exprs ::= Expr Exprs'
+Exprs' ::= ‘,’ Exprs | ε 
+numConst ::= (1-9)(0-9)* | ‘-’(0-9)(0-9)*
 ident ::= (see text)
-
-numConst ::= (1-9)(0-9)*
-|‘-’(0-9)(0-9)*
-
 stringConst ::= (see text)
