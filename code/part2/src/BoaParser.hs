@@ -21,7 +21,7 @@ reservedIdents = ["None", "True", "False", "for", "if", "in", "not"]
 --               _ -> Left "How did it get here ?"
 
 parseString :: String -> Either ParseError Program
-parseString s  = case [a | (a,t) <- readP_to_S parseStringConst s, all isSpace t] of
+parseString s  = case [a | (a,t) <- readP_to_S parseConst s, all isSpace t] of
               [a] -> Right [SExp a]
               [] -> Left "Parsing failed" 
               _ -> Left "How did it get here ?"
@@ -61,6 +61,7 @@ parseIdent :: Parser String
 -- parseIdent :: Parser Either VName FName
 parseIdent = do
     ident <- munch1 (\x -> isDigit x || isLetter x || x == '_')
+    skipWS
     if isDigit (head ident) || ident `elem` reservedIdents then pfail else return ident
 
 parseExpr :: Parser Exp
@@ -109,8 +110,9 @@ parseAddNeg :: Parser Exp
 parseAddNeg = undefined
 
 parseConst :: Parser Exp
-parseConst = do
-    --parStringConst
+parseConst = do --maybe <++ instead
+    parseStringConst
+    <|> do
     parseNumConst
     <|> do
     ident <- parseIdent
@@ -131,53 +133,84 @@ parseConst = do
     <|> do
     satisfy (== '(')
     skipWS
-    exp <- parseExpr --undef
+    exp <- parseExpr
     skipWS
     satisfy (== ')')
     skipWS
     return exp
     <|> do --fun call syntax
-    ident <- parseIdent
+    fname <- parseIdent
     munch1 isSpace
     satisfy (== '(')
     skipWS
-    parseExprz  --do def
+    args <- parseExprz
     skipWS
     satisfy (== ')')
     skipWS
-    return $ Const (StringVal "temp") --temp fix
-    <|> do
+    return $ Call fname args
+    <|> do --list comp syntax
     satisfy (== '[')
     skipWS
-    parseExpr
+    exp <- parseExpr
     skipWS
-    parseForClause --do def
+    for <- parseForClause --do def
     skipWS
-    parseClausez --do def
+    rest <- parseClausez --do def
     skipWS
     satisfy (== ']')
     skipSpaces
-    return $ Const (StringVal "temp") --temp fix
-    <|> do
+    return $ Compr exp (for:rest)
+    <|> do --eval list syntax
     satisfy (== '[')
     skipWS
-    parseExprz
+    exprz <- parseExprz
     skipWS
     satisfy (== ']')
     skipSpaces
-    return $ Const (StringVal "temp") --temp fix
+    return $ List exprz --temp fix
 
-parseForClause = undefined
+parseForClause :: Parser CClause
+parseForClause = do
+    string "for"
+    munch1 isSpace --isWhitespace #
+    ident <- parseIdent
+    skipWS
+    string "in"
+    munch1 isSpace --isWhitespace #
+    exp <- parseExpr
+    skipWS
+    return $ CCFor ident exp
 
-parseIfClause = undefined
+parseIfClause :: Parser CClause
+parseIfClause = do
+    string "if"
+    munch1 isSpace -- isWhitespace
+    exp <- parseExpr
+    return $ CCIf exp
 
-parseClausez = undefined
+parseClausez :: Parser [CClause]
+parseClausez = do
+    for <- parseForClause
+    rest <- parseClausez
+    return (for:rest)
 
-parseExprz = undefined
+parseExprz :: Parser [Exp]
+parseExprz = do parseExprs; 
+            <++ return []   --doc this
 
-parseExprs = undefined
+parseExprs :: Parser [Exp]
+parseExprs = do
+    exp <- parseExpr
+    skipWS
+    rest <- parseExprs'
+    return (exp:rest)
 
-parseExprs' = undefined
+parseExprs' :: Parser [Exp]
+parseExprs' = do
+    satisfy (== ',')
+    skipWS
+    parseExprs
+    <++ return [] --doc this
 
 
 -- To be extended,  probably try to consume '#'  and move on from there
