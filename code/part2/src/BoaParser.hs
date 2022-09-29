@@ -133,15 +133,13 @@ parseAddNeg' expr = do
                     skipWS
                     m <- parseMultDiv
                     skipWS
-                    ret <- parseAddNeg' $ Oper Plus expr m
-                    return ret
+                    parseAddNeg' $ Oper Plus expr m
                     <|> do
                     satisfy(== '-')
                     skipWS
                     m <- parseMultDiv
                     skipWS
-                    ret <- parseAddNeg' $ Oper Minus expr m
-                    return ret
+                    parseAddNeg' $ Oper Minus expr m
                     <|>
                     return expr
 
@@ -157,22 +155,19 @@ parseMultDiv' expr = do
                     skipWS
                     m <- parseMultDiv
                     skipWS
-                    ret <- parseMultDiv' $ Oper Times expr m
-                    return ret
+                    parseMultDiv' $ Oper Times expr m
                     <|> do
                     string "//"
                     skipWS
                     m <- parseMultDiv
                     skipWS
-                    ret <- parseMultDiv' $ Oper Div expr m
-                    return ret
+                    parseMultDiv' $ Oper Div expr m
                     <|> do
                     satisfy(=='%') 
                     skipWS
                     m <- parseMultDiv
                     skipWS
-                    ret <- parseMultDiv' $ Oper Mod expr m
-                    return ret
+                    parseMultDiv' $ Oper Mod expr m
                     <|>
                     return expr
 
@@ -323,7 +318,7 @@ parseStringConst = do
 parseStringInside :: Parser String
 parseStringInside = do 
                     c <- satisfy isPrintable
-                    return ([c])
+                    return [c]
                     <|> do
                     string "\\\n"
                     return ""
