@@ -133,8 +133,63 @@ parseRelOper expr1 expr2 = do
                 string "not in"
                 skipWS
                 return $ Not $ Oper In expr1 expr2
+
 parseAddNeg :: Parser Exp
-parseAddNeg = undefined
+parseAddNeg = do
+            m <- parseMultDiv
+            skipWS
+            parseAddNeg' m
+
+
+parseAddNeg' :: Exp -> Parser Exp
+parseAddNeg' expr = do
+                    satisfy(== '+')
+                    skipWS
+                    m <- parseMultDiv
+                    skipWS
+                    ret <- parseAddNeg' $ Oper Plus expr m
+                    return ret
+                    <|> do
+                    satisfy(== '-')
+                    skipWS
+                    m <- parseMultDiv
+                    skipWS
+                    ret <- parseAddNeg' $ Oper Minus expr m
+                    return ret
+                    <|>
+                    return expr
+
+parseMultDiv :: Parser Exp
+parseMultDiv = do
+            m <- parseConst
+            skipWS
+            parseMultDiv' m
+
+parseMultDiv' :: Exp -> Parser Exp
+parseMultDiv' expr = do
+                    satisfy(== '*')
+                    skipWS
+                    m <- parseMultDiv
+                    skipWS
+                    ret <- parseMultDiv' $ Oper Times expr m
+                    return ret
+                    <|> do
+                    string "//"
+                    skipWS
+                    m <- parseMultDiv
+                    skipWS
+                    ret <- parseMultDiv' $ Oper Div expr m
+                    return ret
+                    <|> do
+                    satisfy(=='%') 
+                    skipWS
+                    m <- parseMultDiv
+                    skipWS
+                    ret <- parseMultDiv' $ Oper Mod expr m
+                    return ret
+                    <|>
+                    return expr
+
 
 parseConst :: Parser Exp
 parseConst = do --maybe <++ instead
