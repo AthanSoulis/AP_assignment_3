@@ -160,19 +160,19 @@ parseMultDiv' :: Exp -> Parser Exp
 parseMultDiv' expr = do
                     satisfy(== '*')
                     skipWS
-                    m <- parseMultDiv
+                    m <- parseConst
                     skipWS
-                    parseMultDiv' $ Oper Times expr m
+                    parseMultDiv' $ Oper Times expr m    
                     <|> do
                     string "//"
                     skipWS
-                    m <- parseMultDiv
+                    m <- parseConst
                     skipWS
                     parseMultDiv' $ Oper Div expr m
                     <|> do
                     satisfy(=='%') 
                     skipWS
-                    m <- parseMultDiv
+                    m <- parseConst
                     skipWS
                     parseMultDiv' $ Oper Mod expr m
                     <|>
