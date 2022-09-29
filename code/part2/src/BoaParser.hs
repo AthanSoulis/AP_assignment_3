@@ -14,12 +14,6 @@ type ParseError = String -- you may replace this
 
 reservedIdents = ["None", "True", "False", "for", "if", "in", "not"]
 
--- parseString :: String -> Either ParseError Program
--- parseString s  = case [a | (a,t) <- readP_to_S parseProgram s, all isSpace t] of
---               [a] -> Right a
---               [] -> Left "Parsing failed" 
---               _ -> Left "How did it get here ?"
-
 parseString :: String -> Either ParseError Program
 parseString s  = case [a | (a,t) <- readP_to_S parseProgram s, all isSpace t] of
               [a] -> Right a
@@ -47,16 +41,8 @@ parseStmts' = do
     parseStmts
     <++ return []
 
--- parseStmts' :: [Stmt] -> Parser [Stmt]
--- parseStmts' prevStmts = do
---                         satisfy(==';')
---                         skipWS
---                         parseStmts' prevStmts
---                         <|>
---                         return prevStmts
-
 parseStmt :: Parser Stmt
-parseStmt = do --return $ SExp $ Const (IntVal 42)
+parseStmt = do
             ident <- parseIdent
             skipWS
             satisfy(== '=')
@@ -70,7 +56,6 @@ parseStmt = do --return $ SExp $ Const (IntVal 42)
             return $ SExp expr
 
 parseIdent :: Parser String
--- parseIdent :: Parser Either VName FName
 parseIdent = do
     ident <- munch1 (\x -> isDigit x || isLetter x || x == '_')
     skipWS
@@ -200,7 +185,7 @@ parseConst = do --maybe <++ instead
     <|> do
     ident <- parseIdent
     skipWS
-    return $ Var ident --temp, fix!
+    return $ Var ident
     <|> do
     string "None"
     skipWS
@@ -236,9 +221,9 @@ parseConst = do --maybe <++ instead
     skipWS
     exp <- parseExpr
     skipWS
-    for <- parseForClause --do def
+    for <- parseForClause
     skipWS
-    rest <- parseClausez --do def
+    rest <- parseClausez
     skipWS
     satisfy (== ']')
     skipSpaces
@@ -250,7 +235,7 @@ parseConst = do --maybe <++ instead
     skipWS
     satisfy (== ']')
     skipSpaces
-    return $ List exprz --temp fix
+    return $ List exprz
 
 parseForClause :: Parser CClause
 parseForClause = do
@@ -266,7 +251,7 @@ parseForClause = do
 
 parseIfClause :: Parser CClause
 parseIfClause = do
-    --string "if"
+    string "if"
     munch1 isSpace -- isWhitespace
     exp <- parseExpr
     return $ CCIf exp
