@@ -65,7 +65,7 @@ parseExpr :: Parser Exp
 parseExpr = do
     skipWS          --this should be unneccessary but shouldn't hurt either
     string "not"
-    munch1 isSpace  -- munch1 isWhitespace
+    munch1 isWhitespace  -- munch1 isWhitespace
     ret <- parseExpr
     return $ Not ret
     <|> do 
@@ -81,7 +81,6 @@ parseRel = do
 
 parseRel' :: Exp -> Parser Exp
 parseRel' expr = do
-
                 parseRelOper expr
                 <|>
                 return expr
@@ -119,12 +118,12 @@ parseRelOper expr1 = do
                 return $ Not $ Oper Less expr1 expr2
                 <|> do
                 string "in"
-                skipWS
+                munch1 isWhitespace
                 expr2 <- parseAddNeg
                 return $ Oper In expr1 expr2
                 <|> do
                 string "not in"
-                skipWS
+                munch1 isWhitespace
                 expr2 <- parseAddNeg
                 return $ Not $ Oper In expr1 expr2
 
@@ -211,7 +210,7 @@ parseConst = do --maybe <++ instead
     return exp
     <|> do --fun call syntax
     fname <- parseIdent
-    munch1 isSpace
+    skipWS
     satisfy (== '(')
     skipWS
     args <- parseExprz
@@ -243,11 +242,11 @@ parseConst = do --maybe <++ instead
 parseForClause :: Parser CClause
 parseForClause = do
     string "for"
-    munch1 isSpace --isWhitespace #
+    munch1 isWhitespace --isWhitespace #
     ident <- parseIdent
     skipWS
     string "in"
-    munch1 isSpace --isWhitespace #
+    munch1 isWhitespace --isWhitespace #
     exp <- parseExpr
     skipWS
     return $ CCFor ident exp
@@ -255,7 +254,7 @@ parseForClause = do
 parseIfClause :: Parser CClause
 parseIfClause = do
     string "if"
-    munch1 isSpace -- isWhitespace
+    munch1 isWhitespace -- isWhitespace
     exp <- parseExpr
     return $ CCIf exp
 
@@ -343,4 +342,7 @@ parseStringInside = do
 
 isPrintable :: Char -> Bool
 isPrintable c = isPrint c && (c /= '\'') && (c /= '\\')
+
+isWhitespace :: Char -> Bool
+isWhitespace = isSpace
 
