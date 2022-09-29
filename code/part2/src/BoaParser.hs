@@ -9,16 +9,24 @@ import Text.ParserCombinators.ReadP
 import Control.Applicative ((<|>))
   -- may use instead of +++ for easier portability to Parsec
 
-import Data.Char (isDigit, isSpace)
+import Data.Char (isDigit, isSpace, isLetter)
 
 type Parser a = ReadP a   -- may use synomym for easier portability to Parsec
 type ParseError = String -- you may replace this
 
-parseString :: String -> Either ParseError Program
+reservedIdents = ["None", "True", "False", "for", "if", "in", "not"]
+
+parseString :: String -> Either ParseError Program --Program
 parseString s  = case [a | (a,t) <- readP_to_S parseProgram s, all isSpace t] of
-              [a] -> Right a
+              [a] -> Right a--Right a
               [] -> Left "Parsing failed" 
               _ -> Left "How did it get here ?"
+
+-- parseString :: String -> Either ParseError Program --Program
+-- parseString s  = case [a | (a,t) <- readP_to_S parseIdent s, all isSpace t] of
+--               [a] -> Right [SExp (Const (StringVal a))]--Right a
+--               [] -> Left "Parsing failed" 
+--               _ -> Left "How did it get here ?"
 
 
 parseProgram :: Parser Program
@@ -54,7 +62,9 @@ parseStmt = do
 
 parseIdent :: Parser String
 -- parseIdent :: Parser Either VName FName
-parseIdent = undefined
+parseIdent = do
+    ident <- munch1 (\x -> isDigit x || isLetter x || x == '_')
+    if isDigit (head ident) || ident `elem` reservedIdents then pfail else return ident
 
 parseExpr :: Parser Exp
 parseExpr = do
@@ -92,16 +102,30 @@ skipWS :: Parser ()
 skipWS = skipSpaces
         
 
-
-
+parseNumConst :: Parser Exp
 parseNumConst = do
-    num <- munch1 isDigit
-    case (head num) of
-        '0' -> if length num == 1 then return $ Const (IntVal 0) else pfail 
-        _  -> return $ Const (IntVal $ read num)
-    <|> do 
     satisfy (== '-')
+    num <- parseNumConstHelper
+    return $ Const (IntVal (-num))
+    <|> do
+    num <- parseNumConstHelper
+    return $ Const (IntVal num)
+
+parseNumConstHelper :: Parser Int
+parseNumConstHelper = do
     num <- munch1 isDigit
     case (head num) of
-        '0' -> if length num == 1 then return $ Const (IntVal 0) else pfail
-        _   -> return $ Const (IntVal $ read ("-"++num))
+        '0' -> if length num == 1 then return 0 else pfail 
+        _  -> return $ read num
+
+-- parseNumConst = do
+--     num <- munch1 isDigit
+--     case (head num) of
+--         '0' -> if length num == 1 then return $ Const (IntVal 0) else pfail 
+--         _  -> return $ Const (IntVal $ read num)
+--     <|> do 
+--     satisfy (== '-')
+--     num <- munch1 isDigit
+--     case (head num) of
+--         '0' -> if length num == 1 then return $ Const (IntVal 0) else pfail
+--         _   -> return $ Const (IntVal $ read ("-"++num))
