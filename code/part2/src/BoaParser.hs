@@ -35,27 +35,39 @@ parseProgram = do
 parseStmts :: Parser [Stmt]
 parseStmts = do 
                 stmt <- parseStmt
-                parseStmts' [stmt]
+                skipWS
+                rest <- parseStmts'
+                skipWS
+                return (stmt:rest)
 
-parseStmts' :: [Stmt] -> Parser [Stmt]
-parseStmts' prevStmts = do
-                        satisfy(==';')
-                        skipWS
-                        parseStmts' prevStmts
-                        <|>
-                        return prevStmts
+parseStmts' :: Parser [Stmt]
+parseStmts' = do
+    satisfy (== ';')
+    skipWS
+    parseStmts
+    <++ return []
+
+-- parseStmts' :: [Stmt] -> Parser [Stmt]
+-- parseStmts' prevStmts = do
+--                         satisfy(==';')
+--                         skipWS
+--                         parseStmts' prevStmts
+--                         <|>
+--                         return prevStmts
 
 parseStmt :: Parser Stmt
 parseStmt = do
             ident <- parseIdent
             skipWS
-            satisfy(=='=')
+            satisfy(== '=')
             skipWS
             expr <- parseExpr
+            skipWS
             return $ SExp expr
-            <|>do 
-                expr <- parseExpr
-                return $ SExp expr
+            <|> do 
+            expr <- parseExpr
+            skipWS
+            return $ SExp expr
 
 parseIdent :: Parser String
 -- parseIdent :: Parser Either VName FName
@@ -66,18 +78,20 @@ parseIdent = do
 
 parseExpr :: Parser Exp
 parseExpr = do
-                string "not"
-                skipWS       -- munch1 isWhitespace
-                parseExpr
-            <|>
-            parseRel
+    skipWS          --this should be unneccessary but shouldn't hurt either
+    string "not"
+    munch1 isSpace  -- munch1 isWhitespace
+    parseExpr
+    <|> do 
+    skipWS
+    parseRel
 
 
 parseRel :: Parser Exp
 parseRel = do
-            e <- parseAddNeg
-            parseWS
-            parseRel' e
+            exp <- parseAddNeg
+            skipWS
+            parseRel' exp
 
 parseRel' :: Exp -> Parser Exp
 parseRel' expr = do
