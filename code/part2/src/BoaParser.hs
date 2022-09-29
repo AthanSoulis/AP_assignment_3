@@ -21,7 +21,7 @@ reservedIdents = ["None", "True", "False", "for", "if", "in", "not"]
 --               _ -> Left "How did it get here ?"
 
 parseString :: String -> Either ParseError Program
-parseString s  = case [a | (a,t) <- readP_to_S parseConst s, all isSpace t] of
+parseString s  = case [a | (a,t) <- readP_to_S parseExpr s, all isSpace t] of
               [a] -> Right [SExp a]
               [] -> Left "Parsing failed" 
               _ -> Left "How did it get here ?"
@@ -88,7 +88,7 @@ parseExpr = do
 
 
 parseRel :: Parser Exp
-parseRel = do
+parseRel = do 
             exp <- parseAddNeg
             skipWS
             parseRel' exp
@@ -96,6 +96,7 @@ parseRel = do
 parseRel' :: Exp -> Parser Exp
 parseRel' expr = do
                 v <- parseAddNeg
+                skipWS
                 parseRelOper expr v
                 <|>
                 return expr
@@ -199,7 +200,7 @@ parseConst = do --maybe <++ instead
     <|> do
     ident <- parseIdent
     skipWS
-    return $ Const (StringVal ident) --temp, fix!
+    return $ Var ident --temp, fix!
     <|> do
     string "None"
     skipWS
@@ -316,7 +317,7 @@ parseNumConstHelper :: Parser Int
 parseNumConstHelper = do
     num <- munch1 isDigit
     skipWS
-    case (head num) of
+    case head num of
         '0' -> if length num == 1 then return 0 else pfail 
         _  -> return $ read num
 
@@ -327,12 +328,12 @@ parseStringConst = do
     print <- many parseStringInside
     satisfy (== '\'')
     skipWS
-    return $ Const (StringVal $ concat $ print)
+    return $ Const (StringVal $ concat print)
 
 parseStringInside :: Parser String
 parseStringInside = do 
                     c <- satisfy isPrintable
-                    return (c:[])
+                    return ([c])
                     <|> do
                     string "\\\n"
                     return ""
@@ -348,5 +349,5 @@ parseStringInside = do
 
 
 isPrintable :: Char -> Bool
-isPrintable c = ((isPrint c) && (c /= '\'') && (c /= '\\'))
+isPrintable c = isPrint c && (c /= '\'') && (c /= '\\')
 
