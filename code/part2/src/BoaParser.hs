@@ -21,8 +21,8 @@ reservedIdents = ["None", "True", "False", "for", "if", "in", "not"]
 --               _ -> Left "How did it get here ?"
 
 parseString :: String -> Either ParseError Program
-parseString s  = case [a | (a,t) <- readP_to_S parseExpr s, all isSpace t] of
-              [a] -> Right [SExp a]
+parseString s  = case [a | (a,t) <- readP_to_S parseProgram s, all isSpace t] of
+              [a] -> Right a
               [] -> Left "Parsing failed" 
               _ -> Left "How did it get here ?"
 
@@ -56,14 +56,14 @@ parseStmts' = do
 --                         return prevStmts
 
 parseStmt :: Parser Stmt
-parseStmt = do
+parseStmt = do --return $ SExp $ Const (IntVal 42)
             ident <- parseIdent
             skipWS
             satisfy(== '=')
             skipWS
             expr <- parseExpr
             skipWS
-            return $ SExp expr
+            return $ SDef ident expr
             <|> do 
             expr <- parseExpr
             skipWS
@@ -266,7 +266,7 @@ parseForClause = do
 
 parseIfClause :: Parser CClause
 parseIfClause = do
-    string "if"
+    --string "if"
     munch1 isSpace -- isWhitespace
     exp <- parseExpr
     return $ CCIf exp
@@ -276,6 +276,11 @@ parseClausez = do
     for <- parseForClause
     rest <- parseClausez
     return (for:rest)
+    <|> do
+    iff <- parseIfClause
+    rest <- parseClausez
+    return (iff:rest)
+    <++ return []
 
 parseExprz :: Parser [Exp]
 parseExprz = do parseExprs; 
