@@ -316,7 +316,6 @@ parseNumConstHelper = do
 parseStringConst :: Parser Exp
 parseStringConst = do
     satisfy (== '\'')
-    skipWS
     print <- many parseStringInside
     satisfy (== '\'')
     skipWS
@@ -330,10 +329,10 @@ parseStringInside = do
                     string "\\\n"
                     return ""
                     <|> do
-                    string "\n"
+                    string "\\n"
                     return "\n"
                     <|> do
-                    string "\'"
+                    string "\\\'"
                     return "\'"
                     <|> do
                     string "\\\\"
