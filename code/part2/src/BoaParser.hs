@@ -66,7 +66,8 @@ parseExpr = do
     skipWS          --this should be unneccessary but shouldn't hurt either
     string "not"
     munch1 isSpace  -- munch1 isWhitespace
-    parseExpr
+    ret <- parseExpr
+    return $ Not ret
     <|> do 
     skipWS
     parseRel
@@ -80,44 +81,51 @@ parseRel = do
 
 parseRel' :: Exp -> Parser Exp
 parseRel' expr = do
-                v <- parseAddNeg
-                skipWS
-                parseRelOper expr v
+
+                parseRelOper expr
                 <|>
                 return expr
 
-parseRelOper :: Exp -> Exp -> Parser Exp
-parseRelOper expr1 expr2 = do
+parseRelOper :: Exp -> Parser Exp
+parseRelOper expr1 = do
                 string "=="
                 skipWS
+                expr2 <- parseAddNeg
                 return $ Oper Eq expr1 expr2
                 <|> do
                 string "!="
                 skipWS
+                expr2 <- parseAddNeg
                 return $ Not $ Oper Eq expr1 expr2
                 <|> do
                 satisfy (== '<')
                 skipWS
+                expr2 <- parseAddNeg
                 return $ Oper Less expr1 expr2
                 <|> do
                 satisfy (== '>')
                 skipWS
+                expr2 <- parseAddNeg
                 return $ Oper Greater expr1 expr2
                 <|> do
                 string "<="
                 skipWS
+                expr2 <- parseAddNeg
                 return $ Not $ Oper Greater expr1 expr2
                 <|> do
                 string ">="
                 skipWS
+                expr2 <- parseAddNeg
                 return $ Not $ Oper Less expr1 expr2
                 <|> do
                 string "in"
                 skipWS
+                expr2 <- parseAddNeg
                 return $ Oper In expr1 expr2
                 <|> do
                 string "not in"
                 skipWS
+                expr2 <- parseAddNeg
                 return $ Not $ Oper In expr1 expr2
 
 parseAddNeg :: Parser Exp
