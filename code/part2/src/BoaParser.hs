@@ -76,36 +76,49 @@ parseExpr = do
 parseRel :: Parser Exp
 parseRel = do
             e <- parseAddNeg
+            parseWS
             parseRel' e
 
 parseRel' :: Exp -> Parser Exp
 parseRel' expr = do
-                parseRelOper expr
-                parseAddNeg
+                v <- parseAddNeg
+                parseRelOper expr v
                 <|>
                 return expr
 
-parseRelOper :: Exp -> Parser Op
-parseRelOper expr = undefined 
-                -- do
-                -- string "=="
-                -- return Eq 
-                -- <|> do
-                -- string "!="
-                -- return Not Eq
-                -- <|> do
-                -- satisfy (== '<')
-                -- <|> do
-                -- satisfy (== '>')
-                -- return 
-                -- <|> do
-                -- string "<="
-                -- <|> do
-                -- string ">="
-                -- <|> do
-                -- string "in"
-                -- <|> do
-                -- string "not in"
+parseRelOper :: Exp -> Exp -> Parser Exp
+parseRelOper expr1 expr2 = do
+                string "=="
+                skipWS
+                return $ Oper Eq expr1 expr2
+                <|> do
+                string "!="
+                skipWS
+                return $ Not $ Oper Eq expr1 expr2
+                <|> do
+                satisfy (== '<')
+                skipWS
+                return $ Oper Less expr1 expr2
+                <|> do
+                satisfy (== '>')
+                skipWS
+                return $ Oper Greater expr1 expr2
+                <|> do
+                string "<="
+                skipWS
+                return $ Not $ Oper Greater expr1 expr2
+                <|> do
+                string ">="
+                skipWS
+                return $ Not $ Oper Less expr1 expr2
+                <|> do
+                string "in"
+                skipWS
+                return $ Oper In expr1 expr2
+                <|> do
+                string "not in"
+                skipWS
+                return $ Not $ Oper In expr1 expr2
 parseAddNeg :: Parser Exp
 parseAddNeg = undefined
 
