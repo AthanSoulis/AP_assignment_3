@@ -10,7 +10,7 @@ RelExpr' ::= RelOper AddNegExpr | ε
 AddNegExpr ::= MultDivExpr AddNegExpr'
 AddNegExpr' ::= AddNegOper MultDivExpr AddNegExpr' | ε
 MultDivExpr ::= ConstExpr MultDivExpr'
-MultDivExpr' ::= MultOper ConstExpr MultDivExpr' | ε
+MultDivExpr' ::= MultDivOper ConstExpr MultDivExpr' | ε
 ConstExpr ::= stringConst | numConst
 | ‘None’ | ‘True’ | ‘False’ 
 | ident | '(' Expr ')' 

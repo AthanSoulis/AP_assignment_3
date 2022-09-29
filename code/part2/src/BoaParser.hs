@@ -16,17 +16,17 @@ type ParseError = String -- you may replace this
 
 reservedIdents = ["None", "True", "False", "for", "if", "in", "not"]
 
-parseString :: String -> Either ParseError Program --Program
-parseString s  = case [a | (a,t) <- readP_to_S parseProgram s, all isSpace t] of
-              [a] -> Right a--Right a
-              [] -> Left "Parsing failed" 
-              _ -> Left "How did it get here ?"
-
 -- parseString :: String -> Either ParseError Program --Program
--- parseString s  = case [a | (a,t) <- readP_to_S parseIdent s, all isSpace t] of
---               [a] -> Right [SExp (Const (StringVal a))]--Right a
+-- parseString s  = case [a | (a,t) <- readP_to_S parseProgram s, all isSpace t] of
+--               [a] -> Right a--Right a
 --               [] -> Left "Parsing failed" 
 --               _ -> Left "How did it get here ?"
+
+parseString :: String -> Either ParseError Program --Program
+parseString s  = case [a | (a,t) <- readP_to_S parseConst s, all isSpace t] of
+              [a] -> Right [SExp a]--Right a
+              [] -> Left "Parsing failed" 
+              _ -> Left "How did it get here ?"
 
 
 parseProgram :: Parser Program
@@ -68,9 +68,8 @@ parseIdent = do
 
 parseExpr :: Parser Exp
 parseExpr = do
-                satisfy(=='n')
-                -- satisfy(=="not") 
-                skipWS
+                string "not"
+                skipWS       -- munch1 isWhitespace
                 parseExpr
             <|>
                 parseRel
@@ -95,12 +94,77 @@ parseAddNeg :: Parser Exp
 parseAddNeg = undefined
 
 parseConst :: Parser Exp
-parseConst = undefined
+parseConst = do
+    --parStringConst
+    parseNumConst
+    <|> do
+    ident <- parseIdent
+    skipWS
+    return $ Const (StringVal ident) --temp, fix!
+    <|> do
+    string "None"
+    skipWS
+    return $ Const NoneVal
+    <|> do
+    string "True"
+    skipWS
+    return $ Const TrueVal
+    <|> do
+    string "False"
+    skipWS
+    return $ Const FalseVal
+    <|> do
+    satisfy (== '(')
+    skipWS
+    exp <- parseExpr --undef
+    skipWS
+    satisfy (== ')')
+    skipWS
+    return exp
+    <|> do --fun call syntax
+    ident <- parseIdent
+    munch1 isSpace
+    satisfy (== '(')
+    skipWS
+    parseExprz  --do def
+    skipWS
+    satisfy (== ')')
+    skipWS
+    return $ Const (StringVal "temp") --temp fix
+    <|> do
+    satisfy (== '[')
+    skipWS
+    parseExpr
+    skipWS
+    parseForClause --do def
+    skipWS
+    parseClausez --do def
+    skipWS
+    satisfy (== ']')
+    skipSpaces
+    return $ Const (StringVal "temp") --temp fix
+    <|> do
+    satisfy (== '[')
+    skipWS
+    parseExprz
+    skipWS
+    satisfy (== ']')
+    skipSpaces
+    return $ Const (StringVal "temp") --temp fix
 
--- To be extended,  probably try to consume '#'  and move on from there
-skipWS :: Parser ()
-skipWS = skipSpaces
-        
+parseForClause = undefined
+
+parseIfClause = undefined
+
+parseClausez = undefined
+
+parseExprz = undefined
+
+parseExprs = undefined
+
+parseExprs' = undefined
+
+
 
 parseNumConst :: Parser Exp
 parseNumConst = do
@@ -114,9 +178,19 @@ parseNumConst = do
 parseNumConstHelper :: Parser Int
 parseNumConstHelper = do
     num <- munch1 isDigit
+    skipWS
     case (head num) of
         '0' -> if length num == 1 then return 0 else pfail 
         _  -> return $ read num
+
+
+
+-- To be extended,  probably try to consume '#'  and move on from there
+skipWS :: Parser ()
+skipWS = skipSpaces
+
+
+
 
 -- parseNumConst = do
 --     num <- munch1 isDigit
