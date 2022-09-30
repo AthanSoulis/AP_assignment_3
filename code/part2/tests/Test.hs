@@ -59,12 +59,37 @@ stringConst = testGroup "String Constants tests" [
   testCase "Parse double backslash" $
     case parseString "'fo\\\\o'" of
       Left e -> assertFailure $ "Error: " ++ e
+      Right p -> return (),
+
+  testCase "New lines" $
+    parseString "'Stay, a while \\n\\n and listen'" @?=
+      Right [SExp (Const (StringVal "Stay, a while \n\n and listen"))],
+  
+  testCase "New lines err" $
+      case parseString "'Stay, a while \n\n and listen'" of
+        Left e -> return ()
+        Right p -> assertFailure $ "Should not parse: " ++ show p,
+
+  testCase "Exclamation, change line character" $
+    case parseString "'-Elrond: Destroy it!!!! ISILDUUUUR! \\n-Isildur: No.'" of
+      Left e -> assertFailure $ "Error: " ++ e
       Right p -> return ()
       ]
 
-tokenWS = testGroup "Whitespace around tokens" []
+tokenWS = testGroup "Whitespace around tokens" [
+    
+    testCase "Illegal new line" $
+    case parseString "' \        \n'" of
+      Left e -> return () 
+      Right p -> assertFailure $ "Should not parse: " ++ show p
+      ]
 
-comments = testGroup "Comment tests" []
+comments = testGroup "Comment tests" [
+
+    testCase "not comment" $
+    parseString "not#comment\\\ncool" @?=
+      Right [SExp (Not (Var "cool"))]
+      ]
 
 disambiguation = testGroup "Disambiguation tests" []
 
