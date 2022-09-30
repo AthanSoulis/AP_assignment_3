@@ -23,28 +23,31 @@ min_tests = testGroup "Minimal tests" [
       Right p -> assertFailure $ "Unexpected parse: " ++ show p]
 
 identifiers = testGroup "Identifier tests" [
-  
-  testCase "Nested not" $
-    case parseString "not (not (x < 3))" of
-      Left e -> assertFailure $ "Error: " ++ e
-      Right p -> return (),
 
-  testCase "Minus Zero" $
-    case parseString "-0" of
-      Left e -> assertFailure $ "Error: " ++ e
-      Right p -> return (),
+  testCase "keyword identifier" $
+    parseString "notx1_" @?=
+      Right [SExp (Var "notx1_")],
+
+  testCase "illegal identifier" $
+    case parseString "1z" of
+      Left e -> return ()
+      Right p -> assertFailure $ "Should not parse this: " ++ show p
+    ]
+
+numConst = testGroup "Numerical Constants tests" [
+
+  testCase "Zero" $
+    parseString "0" @?=
+      Right [SExp (Const (IntVal 0))],
 
   testCase "Hundo" $
-    case parseString "100" of
-      Left e -> assertFailure $ "Error: " ++ e
-      Right p -> return (),
+    parseString "-1337" @?=
+      Right [SExp (Const (IntVal (-1337)))],
 
   testCase "Agent 007" $
     case parseString "007" of
       Left e -> return ()
       Right p -> assertFailure $ "Should not parse this: " ++ show p]
-
-numConst = testGroup "Numerical Constants tests" []
 
 stringConst = testGroup "String Constants tests" [
   testCase "a\"b\\n" $
@@ -78,6 +81,14 @@ stringConst = testGroup "String Constants tests" [
 
 tokenWS = testGroup "Whitespace around tokens" [
     
+    testCase "x == y" $
+    parseString "x  ==(   y)   " @?=
+      Right [SExp (Oper Eq (Var "x") (Var "y"))],
+
+    testCase "x in y" $
+    parseString "x\tin(\ny)" @?=
+      Right [SExp (Oper In (Var "x") (Var "y"))],
+
     testCase "Illegal new line" $
     case parseString "' \        \n'" of
       Left e -> return () 
@@ -88,19 +99,63 @@ comments = testGroup "Comment tests" [
 
     testCase "not comment" $
     parseString "not#comment\\\ncool" @?=
-      Right [SExp (Not (Var "cool"))]
-      ]
+      Right [SExp (Not (Var "cool"))],
 
-disambiguation = testGroup "Disambiguation tests" []
+    testCase "mult comment" $
+    parseString "#c\\\n   #\\\ncool #abc\\\n #sds" @?=
+      Right [SExp (Var "cool")],
+
+    testCase "comment not closed" $
+    case parseString "#abc not x" of
+      Left e -> return ()  -- any message is OK
+      Right p -> assertFailure $ "Unexpected parse: " ++ show p  
+      ]  
+
+disambiguation = testGroup "Disambiguation tests" [
+  testCase "Nested not" $
+      case parseString "not (not (x < 3))" of
+        Left e -> assertFailure $ "Error: " ++ e
+        Right p -> return (),
+
+  testCase "associativity1" $
+    case parseString "x < y >= z" of
+      Left e -> return ()
+      Right p -> assertFailure $ "Should not parse empty program",
+
+  testCase "associativity2" $
+      parseString "x-y+z" @?=
+      Right [SExp (Oper Plus (Oper Minus (Var "x") (Var "y")) (Var "z"))],  
+
+  testCase "associativity3" $
+      parseString "4*3%2" @?=
+      Right [SExp (Oper Mod (Oper Times (Const (IntVal 4)) (Const (IntVal 3))) (Const (IntVal 2)))]   
+      ]
 
 conc_abs_syntax = testGroup "Concrete and abstract syntax correspondence tests" [
   testCase "Empty program" $
     case parseString "" of
       Left e -> return ()
-      Right p -> assertFailure $ "Should not parse empty program"
+      Right p -> assertFailure $ "Should not parse empty program",
+
+  testCase "not eq" $
+    parseString "x != 2" @?=
+      Right [SExp (Not (Oper Eq (Var "x") (Const (IntVal 2))))],
+
+  testCase "greater than" $
+      parseString "4 >= 42" @?=
+      Right [SExp (Not (Oper Less (Const (IntVal 4)) (Const (IntVal 42))))],
+
+  testCase "list" $
+      parseString "[x==2, 1]" @?=
+      Right [SExp (List [Oper Eq (Var "x") (Const (IntVal 2)),Const (IntVal 1)])]
       ]
 
-generalTests = testGroup "Miscellaneous tests" [
+generalTests = testGroup "General tests" [
+
+    testCase "Parse medium brackets" $
+    case parseString "[[[[x]]]]" of
+      Left e -> assertFailure $ "Error: " ++ e
+      Right p -> return (),
 
     testCase "Parse big brackets" $
     case parseString "[[[[[[[[[[[[[[[[[[[[x]]]]]]]]]]]]]]]]" of
@@ -117,6 +172,17 @@ generalTests = testGroup "Miscellaneous tests" [
     testCase "Bracket stmts" $
     case parseString "(s;x)" of
       Left e ->  return ()
-      Right p -> assertFailure $ "Should not parse: " ++ show p
-      ]
+      Right p -> assertFailure $ "Should not parse: " ++ show p,
+
+    testCase "Statements" $
+      parseString "x==2;\nprint(x, 42)" @?=
+        Right [SExp (Oper Eq (Var "x") (Const (IntVal 2))),SExp (Call "print" [Var "x",Const (IntVal 42)])],
+
+    testCase "reserved" $
+      parseString "None; True; False" @?=
+        Right [SExp (Const NoneVal),SExp (Const TrueVal),SExp (Const FalseVal)],
+  
+    testCase "List Compr" $
+      parseString "[x for x in y if x < 3]" @?=
+        Right [SExp (Compr (Var "x") [CCFor "x" (Var "y"),CCIf (Oper Less (Var "x") (Const (IntVal 3)))])]]
 
