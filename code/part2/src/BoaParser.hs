@@ -14,32 +14,42 @@ type ParseError = String -- you may replace this
 
 reservedIdents = ["None", "True", "False", "for", "if", "in", "not"]
 
+--parses a boa program according to the modified grammar in BNF_grammar.txt
+--using parser combinators allows us to combine both lexical and syntactical analysis
 parseString :: String -> Either ParseError Program
 parseString s  = case [a | (a,t) <- readP_to_S parseProgram s, all isSpace t] of
               [a] -> Right a
               [] -> Left "Parsing failed" 
               _ -> Left "How did it get here ?"
 
-
 parseProgram :: Parser Program
 parseProgram = do
                 skipWS
                 parseStmts
 
+--skipWS (skips whitespace and comments)
+--is used overly cautious all throughout our code
+--many of these are superflous since every parser should
+--already skip all the WS after it's token
+--(and parseProgramm at the very beginning)
+--nonetheless, this ensures a correct parse
+--and is only a minor drawback with regards to efficiency
 parseStmts :: Parser [Stmt]
 parseStmts = do 
                 stmt <- parseStmt
-                skipWS
+                skipWS --redundant
                 rest <- parseStmts'
                 skipWS
                 return (stmt:rest)
 
+--epsilon production handled last
 parseStmts' :: Parser [Stmt]
 parseStmts' = do
     satisfy (== ';')
     skipWS
     parseStmts
-    <++ return [] --doc this
+    <|> do
+    return []
 
 parseStmt :: Parser Stmt
 parseStmt = do
@@ -55,6 +65,7 @@ parseStmt = do
             skipWS
             return $ SExp expr
 
+
 parseExpr :: Parser Exp
 parseExpr = do
     parseKeyWord "not"
@@ -65,6 +76,12 @@ parseExpr = do
     <|> do
     parseRel
 
+--this function parses keywords like not, in etc...
+--we use look to peak at the letter following the
+--keyword without consuming it.
+--if this letter could belong to an identifier
+--then we can not parse a keyword like for ex. in "notx"
+--this is necessary bc "not(x)" should parse to an Expr
 parseKeyWord :: String -> Parser String
 parseKeyWord str = do
     string str
@@ -132,7 +149,6 @@ parseAddNeg = do
             skipWS
             parseAddNeg' m
 
-
 parseAddNeg' :: Exp -> Parser Exp
 parseAddNeg' expr = do
                     satisfy(== '+')
@@ -177,9 +193,17 @@ parseMultDiv' expr = do
                     <|>
                     return expr
 
-
+--the last to productions in this expression
+--namely List and List Comprehnsion expressions
+--cause some major efficieny issues when
+--parsing deep brackets. this is because both
+--productions start with the same symbol
+--and due to the nature of built in backtracking
+--in readP we have to reevaluate (parts) of the
+--input several times skipping back and forth
+--a remedy might exist using the <++ operator
 parseConst :: Parser Exp
-parseConst = do --maybe <++ for deep brackets
+parseConst = do
     parseStringConst
     <|> do
     parseNumConst
@@ -263,11 +287,11 @@ parseClausez = do
     iff <- parseIfClause
     rest <- parseClausez
     return (iff:rest)
-    <++ return [] --doc this
+    <|> return []
 
 parseExprz :: Parser [Exp]
 parseExprz = do parseExprs; 
-            <++ return []   --doc this
+            <|> return []
 
 parseExprs :: Parser [Exp]
 parseExprs = do
@@ -281,8 +305,12 @@ parseExprs' = do
     satisfy (== ',')
     skipWS
     parseExprs
-    <++ return [] --doc this
+    <|> return []
 
+--just skipSpaces should only be applied
+--if we have no comments to skip
+--hence, the <++ operator is used to
+--only check this option if no # could be found
 skipWS :: Parser ()
 skipWS = do 
     skipSpaces
@@ -296,14 +324,18 @@ skipComments = do
     munch (/= '\n')
     skipCommentsEnd
 
+--a comment either ends with \n or
+--at the end of the input
 skipCommentsEnd :: Parser ()
 skipCommentsEnd = do
     eof
-    <++ do --doc this
+    <|> do
     string "\n"
     skipWS
     return mempty
-        
+
+--the following functions parse the complex terminals
+--according to the specifications   
 parseIdent :: Parser String
 parseIdent = do
     ident <- munch1 (\x -> isDigit x || isLetter x || x == '_')
@@ -351,7 +383,6 @@ parseStringInside = do
                     <|> do
                     string "\\\\"
                     return "\\"
-
 
 isPrintable :: Char -> Bool
 isPrintable c = isPrint c && (c /= '\'') && (c /= '\\')
