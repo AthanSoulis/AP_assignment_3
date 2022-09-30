@@ -37,9 +37,8 @@ parseProgram = do
 parseStmts :: Parser [Stmt]
 parseStmts = do 
                 stmt <- parseStmt
-                skipWS --redundant
+                --skipWS --redundant
                 rest <- parseStmts'
-                skipWS
                 return (stmt:rest)
 
 --epsilon production handled last
@@ -49,29 +48,25 @@ parseStmts' = do
     skipWS
     parseStmts
     <|> do
+    skipWS
     return []
 
 parseStmt :: Parser Stmt
 parseStmt = do
             ident <- parseIdent
-            skipWS
             satisfy(== '=')
             skipWS
             expr <- parseExpr
-            skipWS
             return $ SDef ident expr
             <|> do 
             expr <- parseExpr
-            skipWS
             return $ SExp expr
 
 
 parseExpr :: Parser Exp
 parseExpr = do
     parseKeyWord "not"
-    skipWS
     exp <- parseExpr
-    skipWS
     return $ Not exp
     <|> do
     parseRel
@@ -92,7 +87,6 @@ parseKeyWord str = do
 parseRel :: Parser Exp
 parseRel = do 
             exp <- parseAddNeg
-            skipWS
             parseRel' exp
 
 parseRel' :: Exp -> Parser Exp
@@ -146,7 +140,6 @@ parseRelOper expr1 = do
 parseAddNeg :: Parser Exp
 parseAddNeg = do
             m <- parseMultDiv
-            skipWS
             parseAddNeg' m
 
 parseAddNeg' :: Exp -> Parser Exp
@@ -154,13 +147,11 @@ parseAddNeg' expr = do
                     satisfy(== '+')
                     skipWS
                     m <- parseMultDiv
-                    skipWS
                     parseAddNeg' $ Oper Plus expr m
                     <|> do
                     satisfy(== '-')
                     skipWS
                     m <- parseMultDiv
-                    skipWS
                     parseAddNeg' $ Oper Minus expr m
                     <|>
                     return expr
@@ -168,7 +159,6 @@ parseAddNeg' expr = do
 parseMultDiv :: Parser Exp
 parseMultDiv = do
             m <- parseConst
-            skipWS
             parseMultDiv' m
 
 parseMultDiv' :: Exp -> Parser Exp
@@ -176,19 +166,16 @@ parseMultDiv' expr = do
                     satisfy(== '*')
                     skipWS
                     m <- parseConst
-                    skipWS
                     parseMultDiv' $ Oper Times expr m    
                     <|> do
                     string "//"
                     skipWS
                     m <- parseConst
-                    skipWS
                     parseMultDiv' $ Oper Div expr m
                     <|> do
                     satisfy(=='%') 
                     skipWS
                     m <- parseConst
-                    skipWS
                     parseMultDiv' $ Oper Mod expr m
                     <|>
                     return expr
@@ -209,7 +196,6 @@ parseConst = do
     parseNumConst
     <|> do
     ident <- parseIdent
-    skipWS
     return $ Var ident
     <|> do
     string "None"
@@ -227,17 +213,14 @@ parseConst = do
     satisfy (== '(')
     skipWS
     exp <- parseExpr
-    skipWS
     satisfy (== ')')
     skipWS
     return exp
     <|> do --fun call syntax
     fname <- parseIdent
-    skipWS
     satisfy (== '(')
     skipWS
     args <- parseExprz
-    skipWS
     satisfy (== ')')
     skipWS
     return $ Call fname args
@@ -245,7 +228,6 @@ parseConst = do
     satisfy (== '[')
     skipWS
     exprz <- parseExprz
-    skipWS
     satisfy (== ']')
     skipSpaces
     return $ List exprz
@@ -253,11 +235,8 @@ parseConst = do
     satisfy (== '[')
     skipWS
     exp <- parseExpr
-    skipWS
     for <- parseForClause
-    skipWS
     rest <- parseClausez
-    skipWS
     satisfy (== ']')
     skipSpaces
     return $ Compr exp (for:rest)
@@ -266,10 +245,8 @@ parseForClause :: Parser CClause
 parseForClause = do
     parseKeyWord "for"
     ident <- parseIdent
-    skipWS
     parseKeyWord "in"
     exp <- parseExpr
-    skipWS
     return $ CCFor ident exp
 
 parseIfClause :: Parser CClause
@@ -296,7 +273,6 @@ parseExprz = do parseExprs;
 parseExprs :: Parser [Exp]
 parseExprs = do
     exp <- parseExpr
-    skipWS
     rest <- parseExprs'
     return (exp:rest)
 
