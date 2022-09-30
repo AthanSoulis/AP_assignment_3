@@ -61,16 +61,34 @@ parseIdent = do
     skipWS
     if isDigit (head ident) || ident `elem` reservedIdents then pfail else return ident
 
+-- parseExpr :: Parser Exp
+-- parseExpr = do
+--     skipWS          --this should be unneccessary but shouldn't hurt either
+--     string "not"
+--     munch1 isWhitespace  -- munch1 isWhitespace
+--     ret <- parseExpr
+--     return $ Not ret
+--     <|> do 
+--     skipWS
+--     parseRel
+
 parseExpr :: Parser Exp
 parseExpr = do
-    skipWS          --this should be unneccessary but shouldn't hurt either
-    string "not"
-    munch1 isWhitespace  -- munch1 isWhitespace
-    ret <- parseExpr
-    return $ Not ret
-    <|> do 
+    parseKeyWord
     skipWS
+    exp <- parseExpr
+    skipWS
+    return $ Not exp
+    <|> do
     parseRel
+
+
+parseKeyWord :: Parser String
+parseKeyWord = do
+    string "not"
+    next <- look
+    if (\x -> not (isDigit x || isLetter x || x == '_')) $ head next then return "not" else pfail
+
 
 
 parseRel :: Parser Exp
