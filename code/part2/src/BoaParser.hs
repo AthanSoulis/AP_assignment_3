@@ -27,17 +27,9 @@ parseProgram = do
                 skipWS
                 parseStmts
 
---skipWS (skips whitespace and comments)
---is used overly cautious all throughout our code
---many of these are superflous since every parser should
---already skip all the WS after it's token
---(and parseProgramm at the very beginning)
---nonetheless, this ensures a correct parse
---and is only a minor drawback with regards to efficiency
 parseStmts :: Parser [Stmt]
 parseStmts = do 
                 stmt <- parseStmt
-                --skipWS --redundant
                 rest <- parseStmts'
                 return (stmt:rest)
 
