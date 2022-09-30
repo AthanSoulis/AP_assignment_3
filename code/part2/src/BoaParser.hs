@@ -55,17 +55,6 @@ parseStmt = do
             skipWS
             return $ SExp expr
 
--- parseExpr :: Parser Exp
--- parseExpr = do
---     skipWS          --this should be unneccessary but shouldn't hurt either
---     string "not"
---     munch1 isWhitespace  -- munch1 isWhitespace
---     ret <- parseExpr
---     return $ Not ret
---     <|> do 
---     skipWS
---     parseRel
-
 parseExpr :: Parser Exp
 parseExpr = do
     parseKeyWord "not"
@@ -127,14 +116,10 @@ parseRelOper expr1 = do
                 expr2 <- parseAddNeg
                 return $ Not $ Oper Less expr1 expr2
                 <|> do
-                --string "in"
-                --munch1 isWhitespace
                 parseKeyWord "in"
                 expr2 <- parseAddNeg
                 return $ Oper In expr1 expr2
                 <|> do
-                -- string "not in"
-                -- munch1 isWhitespace
                 parseKeyWord "not"
                 skipWS
                 parseKeyWord "in"
@@ -194,7 +179,7 @@ parseMultDiv' expr = do
 
 
 parseConst :: Parser Exp
-parseConst = do --maybe <++ instead
+parseConst = do --maybe <++ for deep brackets
     parseStringConst
     <|> do
     parseNumConst
@@ -232,6 +217,14 @@ parseConst = do --maybe <++ instead
     satisfy (== ')')
     skipWS
     return $ Call fname args
+    <|> do --eval list syntax
+    satisfy (== '[')
+    skipWS
+    exprz <- parseExprz
+    skipWS
+    satisfy (== ']')
+    skipSpaces
+    return $ List exprz
     <|> do --list comp syntax
     satisfy (== '[')
     skipWS
@@ -244,24 +237,12 @@ parseConst = do --maybe <++ instead
     satisfy (== ']')
     skipSpaces
     return $ Compr exp (for:rest)
-    <|> do --eval list syntax
-    satisfy (== '[')
-    skipWS
-    exprz <- parseExprz
-    skipWS
-    satisfy (== ']')
-    skipSpaces
-    return $ List exprz
 
 parseForClause :: Parser CClause
 parseForClause = do
-    -- string "for"
-    -- munch1 isWhitespace --isWhitespace #
     parseKeyWord "for"
     ident <- parseIdent
     skipWS
-    -- string "in"
-    -- munch1 isWhitespace --isWhitespace #
     parseKeyWord "in"
     exp <- parseExpr
     skipWS
@@ -269,8 +250,6 @@ parseForClause = do
 
 parseIfClause :: Parser CClause
 parseIfClause = do
-    -- string "if"
-    -- munch1 isWhitespace -- isWhitespace
     parseKeyWord "if"
     exp <- parseExpr
     return $ CCIf exp
@@ -314,7 +293,7 @@ skipWS = do
 
 skipComments :: Parser ()
 skipComments = do
-    munch (/= '\\')
+    munch (/= '\n')
     skipCommentsEnd
 
 skipCommentsEnd :: Parser ()
@@ -322,7 +301,7 @@ skipCommentsEnd = do
     eof
     <++ do --doc this
     string "\n"
-    skipSpaces
+    skipWS
     return mempty
         
 parseIdent :: Parser String
@@ -376,8 +355,3 @@ parseStringInside = do
 
 isPrintable :: Char -> Bool
 isPrintable c = isPrint c && (c /= '\'') && (c /= '\\')
-
---extend to #
--- isWhitespace :: Char -> Bool
--- isWhitespace = isSpace
-
