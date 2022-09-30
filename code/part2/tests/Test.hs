@@ -81,9 +81,17 @@ generalTests = testGroup "Miscellaneous tests" [
     case parseString "[[[[[[[[[[[[[[[[[[[[x]]]]]]]]]]]]]]]]" of
       Left e -> assertFailure $ "Error: " ++ e
       Right p -> return (),
-    testCase "Parse big parentheses" $
+    testCase "Parse big parentheses 1" $
     case parseString "((((((((((((((((((((x))))))))))))))))))))" of
       Left e -> assertFailure $ "Error: " ++ e
-      Right p -> return ()
+      Right p -> return (),
+    testCase "Parse big parentheses 2" $
+    case parseString "(((((((((((((((((((s)))))))))))+((((((((((((x))))))))))))))))))))" of
+      Left e -> assertFailure $ "Error: " ++ e
+      Right p -> return (),
+    testCase "Bracket stmts" $
+    case parseString "(s;x)" of
+      Left e ->  return ()
+      Right p -> assertFailure $ "Should not parse: " ++ show p
       ]
 
