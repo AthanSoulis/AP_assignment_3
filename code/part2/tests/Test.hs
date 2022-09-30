@@ -75,7 +75,7 @@ conc_abs_syntax = testGroup "Concrete and abstract syntax correspondence tests" 
       Right p -> assertFailure $ "Should not parse empty program"
       ]
 
-generalTests = testGroup "General tests" [
+generalTests = testGroup "Miscellaneous tests" [
 
     testCase "Parse big brackets" $
     case parseString "[[[[[[[[[[[[[[[[[[[[x]]]]]]]]]]]]]]]]" of
