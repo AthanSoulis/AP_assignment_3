@@ -9,7 +9,8 @@ import Test.Tasty.HUnit
 main :: IO ()
 main = defaultMain $ localOption (mkTimeout 1000000) tests
 
-tests = testGroup "Test Suite" [min_tests, ass_description_tests]
+tests = testGroup "Test Suite" [min_tests, identifiers, numConst, stringConst,
+ tokenWS, comments, disambiguation, conc_abs_syntax]
 
 min_tests = testGroup "Minimal tests" [
   testCase "simple success" $
@@ -21,9 +22,57 @@ min_tests = testGroup "Minimal tests" [
       Left e -> return ()  -- any message is OK
       Right p -> assertFailure $ "Unexpected parse: " ++ show p]
 
-ass_description_tests = testGroup "Assignment Description tests" [
+identifiers = testGroup "Identifier tests" [
   
   testCase "Nested not" $
     case parseString "not (not (x < 3))" of
       Left e -> assertFailure $ "Error: " ++ e
-      Right p -> return ()]
+      Right p -> return (),
+
+  testCase "Minus Zero" $
+    case parseString "-0" of
+      Left e -> assertFailure $ "Error: " ++ e
+      Right p -> return (),
+
+  testCase "Hundo" $
+    case parseString "100" of
+      Left e -> assertFailure $ "Error: " ++ e
+      Right p -> return (),
+
+  testCase "Agent 007" $
+    case parseString "007" of
+      Left e -> return ()
+      Right p -> assertFailure $ "Should not parse this: " ++ show p]
+
+numConst = testGroup "Numerical Constants tests" []
+
+stringConst = testGroup "String Constants tests" [
+  testCase "a\"b\\n" $
+    parseString "'a\"b\\n'" @?=
+      Right [SExp (Const (StringVal "a\"b\n"))],
+
+  testCase "Parse backslash illegal" $
+    case parseString "'fo\\o'" of
+      Left e -> return ()
+      Right p -> assertFailure $ "Should not parse this: " ++ show p,
+      
+  testCase "Parse double backslash" $
+    case parseString "'fo\\\\o'" of
+      Left e -> assertFailure $ "Error: " ++ e
+      Right p -> return ()
+      ]
+
+tokenWS = testGroup "Whitespace around tokens" []
+
+comments = testGroup "Comment tests" []
+
+disambiguation = testGroup "Disambiguation tests" []
+
+conc_abs_syntax = testGroup "Concrete and abstract syntax correspondence tests" [
+  testCase "Empty program" $
+    case parseString "" of
+      Left e -> return ()
+      Right p -> assertFailure $ "Should not parse empty program"
+      ]
+
+
