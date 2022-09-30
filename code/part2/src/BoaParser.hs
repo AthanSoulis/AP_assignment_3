@@ -39,7 +39,7 @@ parseStmts' = do
     satisfy (== ';')
     skipWS
     parseStmts
-    <++ return []
+    <++ return [] --doc this
 
 parseStmt :: Parser Stmt
 parseStmt = do
@@ -55,12 +55,6 @@ parseStmt = do
             skipWS
             return $ SExp expr
 
-parseIdent :: Parser String
-parseIdent = do
-    ident <- munch1 (\x -> isDigit x || isLetter x || x == '_')
-    skipWS
-    if isDigit (head ident) || ident `elem` reservedIdents then pfail else return ident
-
 -- parseExpr :: Parser Exp
 -- parseExpr = do
 --     skipWS          --this should be unneccessary but shouldn't hurt either
@@ -74,7 +68,7 @@ parseIdent = do
 
 parseExpr :: Parser Exp
 parseExpr = do
-    parseKeyWord
+    parseKeyWord "not"
     skipWS
     exp <- parseExpr
     skipWS
@@ -82,14 +76,12 @@ parseExpr = do
     <|> do
     parseRel
 
-
-parseKeyWord :: Parser String
-parseKeyWord = do
-    string "not"
+parseKeyWord :: String -> Parser String
+parseKeyWord str = do
+    string str
     next <- look
-    if (\x -> not (isDigit x || isLetter x || x == '_')) $ head next then return "not" else pfail
-
-
+    skipWS
+    if (\x -> not (isDigit x || isLetter x || x == '_')) $ head next then return str else pfail
 
 parseRel :: Parser Exp
 parseRel = do 
@@ -135,13 +127,15 @@ parseRelOper expr1 = do
                 expr2 <- parseAddNeg
                 return $ Not $ Oper Less expr1 expr2
                 <|> do
-                string "in"
-                munch1 isWhitespace
+                --string "in"
+                --munch1 isWhitespace
+                parseKeyWord "in"
                 expr2 <- parseAddNeg
                 return $ Oper In expr1 expr2
                 <|> do
-                string "not in"
-                munch1 isWhitespace
+                -- string "not in"
+                -- munch1 isWhitespace
+                parseKeyWord "not in"
                 expr2 <- parseAddNeg
                 return $ Not $ Oper In expr1 expr2
 
@@ -259,20 +253,23 @@ parseConst = do --maybe <++ instead
 
 parseForClause :: Parser CClause
 parseForClause = do
-    string "for"
-    munch1 isWhitespace --isWhitespace #
+    -- string "for"
+    -- munch1 isWhitespace --isWhitespace #
+    parseKeyWord "for"
     ident <- parseIdent
     skipWS
-    string "in"
-    munch1 isWhitespace --isWhitespace #
+    -- string "in"
+    -- munch1 isWhitespace --isWhitespace #
+    parseKeyWord "in"
     exp <- parseExpr
     skipWS
     return $ CCFor ident exp
 
 parseIfClause :: Parser CClause
 parseIfClause = do
-    string "if"
-    munch1 isWhitespace -- isWhitespace
+    -- string "if"
+    -- munch1 isWhitespace -- isWhitespace
+    parseKeyWord "if"
     exp <- parseExpr
     return $ CCIf exp
 
@@ -285,7 +282,7 @@ parseClausez = do
     iff <- parseIfClause
     rest <- parseClausez
     return (iff:rest)
-    <++ return []
+    <++ return [] --doc this
 
 parseExprz :: Parser [Exp]
 parseExprz = do parseExprs; 
@@ -313,6 +310,11 @@ skipWS = skipSpaces
 parseComments :: Parser ()
 parseComments = undefined
         
+parseIdent :: Parser String
+parseIdent = do
+    ident <- munch1 (\x -> isDigit x || isLetter x || x == '_')
+    skipWS
+    if isDigit (head ident) || ident `elem` reservedIdents then pfail else return ident
 
 parseNumConst :: Parser Exp
 parseNumConst = do
@@ -360,6 +362,7 @@ parseStringInside = do
 isPrintable :: Char -> Bool
 isPrintable c = isPrint c && (c /= '\'') && (c /= '\\')
 
-isWhitespace :: Char -> Bool
-isWhitespace = isSpace
+--extend to #
+-- isWhitespace :: Char -> Bool
+-- isWhitespace = isSpace
 
