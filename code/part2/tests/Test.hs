@@ -10,7 +10,7 @@ main :: IO ()
 main = defaultMain $ localOption (mkTimeout 1000000) tests
 
 tests = testGroup "Test Suite" [min_tests, identifiers, numConst, stringConst,
- tokenWS, comments, disambiguation, conc_abs_syntax]
+ tokenWS, comments, disambiguation, conc_abs_syntax, generalTests]
 
 min_tests = testGroup "Minimal tests" [
   testCase "simple success" $
@@ -75,4 +75,15 @@ conc_abs_syntax = testGroup "Concrete and abstract syntax correspondence tests" 
       Right p -> assertFailure $ "Should not parse empty program"
       ]
 
+generalTests = testGroup "General tests" [
+
+    testCase "Parse big brackets" $
+    case parseString "[[[[[[[[[[[[[[[[[[[[x]]]]]]]]]]]]]]]]" of
+      Left e -> assertFailure $ "Error: " ++ e
+      Right p -> return (),
+    testCase "Parse big parentheses" $
+    case parseString "((((((((((((((((((((x))))))))))))))))))))" of
+      Left e -> assertFailure $ "Error: " ++ e
+      Right p -> return ()
+      ]
 
