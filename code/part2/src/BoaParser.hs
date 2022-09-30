@@ -304,17 +304,26 @@ parseExprs' = do
     parseExprs
     <++ return [] --doc this
 
-
--- To be extended,  probably try to consume '#'  and move on from there
 skipWS :: Parser ()
 skipWS = do 
     skipSpaces
-    -- <|> do
-    -- skipSpaces
-    -- parseComments
+    satisfy (== '#')
+    skipComments
+    <++ do  --doc this
+    skipSpaces
 
-parseComments :: Parser ()
-parseComments = return mempty
+skipComments :: Parser ()
+skipComments = do
+    munch (/= '\\')
+    skipCommentsEnd
+
+skipCommentsEnd :: Parser ()
+skipCommentsEnd = do
+    eof
+    <++ do --doc this
+    string "\n"
+    skipSpaces
+    return mempty
         
 parseIdent :: Parser String
 parseIdent = do
