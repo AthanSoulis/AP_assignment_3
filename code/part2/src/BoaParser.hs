@@ -135,7 +135,9 @@ parseRelOper expr1 = do
                 <|> do
                 -- string "not in"
                 -- munch1 isWhitespace
-                parseKeyWord "not in"
+                parseKeyWord "not"
+                skipWS
+                parseKeyWord "in"
                 expr2 <- parseAddNeg
                 return $ Not $ Oper In expr1 expr2
 
@@ -305,10 +307,14 @@ parseExprs' = do
 
 -- To be extended,  probably try to consume '#'  and move on from there
 skipWS :: Parser ()
-skipWS = skipSpaces
+skipWS = do 
+    skipSpaces
+    -- <|> do
+    -- skipSpaces
+    -- parseComments
 
 parseComments :: Parser ()
-parseComments = undefined
+parseComments = return mempty
         
 parseIdent :: Parser String
 parseIdent = do
